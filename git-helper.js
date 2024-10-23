@@ -7,9 +7,12 @@ const { showVersion } = require('./commands/version.js'); // Assure-toi que le c
 
 const git = simpleGit();
 
+<<<<<<< HEAD
 let addedFiles = false; // Pour suivre si des fichiers ont été ajoutés
 let committed = false; // Pour suivre si un commit a été effectué
 
+=======
+>>>>>>> 7b03b67a61d6b2fd842f590dc3bf9740e008ffd4
 async function loadDependencies() {
     chalk = (await import('chalk')).default;
     inquirer = (await import('inquirer')).default;
@@ -26,8 +29,13 @@ async function displayGitStatus() {
 async function getGitFiles() {
     const status = await git.status();
     return [
+<<<<<<< HEAD
         ...status.modified.map(file => ({ name: ` ${chalk.yellow('🟡')} ${file}`, value: file })),
         ...status.not_added.map(file => ({ name: ` ${chalk.red('🔴')} ${file}`, value: file }))
+=======
+        ...status.modified.map(file => ({ name: `${chalk.yellow('🟡')} ${file}`, value: file })),
+        ...status.not_added.map(file => ({ name: `${chalk.red('🔴')} ${file}`, value: file }))
+>>>>>>> 7b03b67a61d6b2fd842f590dc3bf9740e008ffd4
     ];
 }
 
@@ -42,7 +50,10 @@ async function selectFilesToAdd(files) {
             pageSize: 10,
         }
     ]);
+<<<<<<< HEAD
     addedFiles = selectedFiles.length > 0;
+=======
+>>>>>>> 7b03b67a61d6b2fd842f590dc3bf9740e008ffd4
     return selectedFiles;
 }
 
@@ -55,8 +66,13 @@ async function chooseCommitType() {
             choices: [
                 { name: '[+] Add', value: '[+]' },
                 { name: '[|] Fix', value: '[|]' },
+<<<<<<< HEAD
                 { name: '[|] Merge', value: '[|] fix merge' },
                 { name: '[-] Remove', value: '[-]' },
+=======
+                { name: '[-] Remove', value: '[-]' },
+                { name: '[|] Fix Merge', value: '[|] fix merge' }
+>>>>>>> 7b03b67a61d6b2fd842f590dc3bf9740e008ffd4
             ],
             prefix: '',
         }
@@ -77,7 +93,10 @@ async function getCommitMessage(commitType) {
             validate: (input) => input.trim() ? true : "Le message de commit ne peut pas être vide."
         }
     ]);
+<<<<<<< HEAD
     committed = true;
+=======
+>>>>>>> 7b03b67a61d6b2fd842f590dc3bf9740e008ffd4
     return commitMessage;
 }
 
