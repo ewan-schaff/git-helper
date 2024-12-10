@@ -35,9 +35,8 @@ async function getGitFiles() {
 
 async function cleanIndex() {
     try {
-        console.log(`\n--- ${chalk.bold("Nettoyage des fichiers ajoutés...")} ---`);
         await git.reset(['HEAD']);
-        console.log(`\n--- ${chalk.greenBright("Ajouts nettoyés avec succès")} ---`);
+        console.log(`\n--- ${chalk.bold("Nettoyage des fichiers ajoutés...")} ---`);
     } catch (error) {
         console.error("Erreur pendant la tentative de nettoyage :", error);
     }
@@ -45,8 +44,7 @@ async function cleanIndex() {
 
 async function undoLastCommit() {
     try {
-        console.log(`\n--- ${chalk.bold("Annulation du dernier commit...")} ---`);
-        await git.reset(['--soft', 'HEAD~1']);
+        await git.reset(['--soft', 'HEAD~1']); // Garder les modifications dans l'index
         console.log(`\n--- ${chalk.greenBright("Dernier commit annulé avec succès")} ---`);
     } catch (error) {
         console.error("Erreur pendant l'annulation du dernier commit :", error);
@@ -54,12 +52,13 @@ async function undoLastCommit() {
 }
 
 async function handleExit() {
-    if (addedFiles && selectedFiles.length > 0) {
-        await cleanIndex();
-    } else if (committed) {
-        await undoLastCommit();
+    if (committed) {
+        await undoLastCommit(); // Annuler le dernier commit
     }
-    console.log(`\n--- ${chalk.bold("Programme quitté avec succès")} ---\n`);
+    if (addedFiles && selectedFiles.length > 0) {
+        await cleanIndex(); // Nettoyer les fichiers ajoutés
+    }
+    console.log(`${chalk.bold("Programme quitté avec succès.")}`);
     process.exit(0);
 }
 
@@ -99,7 +98,7 @@ async function main() {
 
         await git.commit(commitMessage);
 
-        console.log(`\n--- ${chalk.bold(`${chalk.greenBright("Commit effectué avec succès")}`)} ---`);
+        console.log(`\n--- ${chalk.greenBright("Commit effectué avec succès.")} ---\n`);
         console.log(`Message de commit : ${chalk.blue(`${commitMessage}`)}`);
         console.log(`Fichiers commit :\n${chalk.green(selectedFiles.join(' | '))}`);
 
@@ -107,12 +106,13 @@ async function main() {
 
         if (shouldPush) {
             await git.push();
-            console.log(`\n--- ${chalk.bold("Push effectué avec succès")} ---`);
+            console.log(`${chalk.greenBright("Push effectué avec succès.")}`);
         } else {
-            await undoLastCommit();
+            await handleExit();
         }
     } catch (err) {
         console.error("Erreur :", err);
+        await handleExit();
     } finally {
         process.stdin.setRawMode(false);
     }
