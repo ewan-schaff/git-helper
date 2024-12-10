@@ -28,14 +28,16 @@ async function getGitFiles() {
     const status = await git.status();
     return [
         ...status.modified.map(file => ({ name: ` ${chalk.yellow('🟡')} ${file}`, value: file })),
-        ...status.not_added.map(file => ({ name: ` ${chalk.red('🔴')} ${file}`, value: file }))
+        ...status.not_added.map(file => ({ name: ` ${chalk.red('🔴')} ${file}`, value: file })),
+        ...status.deleted.map(file => ({ name: ` ${chalk.blue('🗑️')} ${file}`, value: file })) // Ajoute les fichiers supprimés
     ];
 }
 
 async function cleanIndex() {
     try {
+        console.log(`\n--- ${chalk.bold("Nettoyage des fichiers ajoutés...")} ---`);
         await git.reset(['HEAD']);
-        console.log(`\n--- ${chalk.bold("Ajouts nettoyés")} ---`);
+        console.log(`\n--- ${chalk.greenBright("Ajouts nettoyés avec succès")} ---`);
     } catch (error) {
         console.error("Erreur pendant la tentative de nettoyage :", error);
     }
@@ -43,9 +45,9 @@ async function cleanIndex() {
 
 async function undoLastCommit() {
     try {
+        console.log(`\n--- ${chalk.bold("Annulation du dernier commit...")} ---`);
         await git.reset(['--soft', 'HEAD~1']);
-        await git.reset(['HEAD']);
-        console.log(`\n--- ${chalk.bold("Dernier commit annulé, modifications conservées dans l'index")} ---`);
+        console.log(`\n--- ${chalk.greenBright("Dernier commit annulé avec succès")} ---`);
     } catch (error) {
         console.error("Erreur pendant l'annulation du dernier commit :", error);
     }
@@ -53,8 +55,7 @@ async function undoLastCommit() {
 
 async function handleExit() {
     if (addedFiles && selectedFiles.length > 0) {
-        console.log(`\n--- ${chalk.redBright("Nettoyage des fichiers ajoutés...")} ---`);
-        await git.reset(['HEAD', ...selectedFiles]);
+        await cleanIndex();
     } else if (committed) {
         await undoLastCommit();
     }
@@ -91,6 +92,7 @@ async function main() {
         }
 
         await git.add(selectedFiles);
+
         const commitType = await chooseCommitType();
         const commitMessage = await getCommitMessage(commitType, selectedFiles);
         committed = true;
