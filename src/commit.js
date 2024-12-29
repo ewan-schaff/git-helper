@@ -1,5 +1,25 @@
+const fs = require('fs');
+const path = require('path');
+
 function formatFileNames(fileNames) {
     return fileNames.map((file) => file.replace(/[^a-zA-Z0-9.\-_]/g, '')).join('&&');
+}
+
+async function saveCommitMessage(commitMessage) {
+    const historyFilePath = path.join(process.cwd(), '.history');
+    try {
+        const existingHistory = fs.existsSync(historyFilePath)
+            ? fs.readFileSync(historyFilePath, 'utf-8').split('\n').filter(Boolean)
+            : [];
+
+        if (!existingHistory.includes(commitMessage)) {
+            existingHistory.unshift(commitMessage); // Ajouter le plus récent au début
+        }
+
+        fs.writeFileSync(historyFilePath, existingHistory.join('\n'), 'utf-8');
+    } catch (err) {
+        console.error('Erreur lors de l\'écriture de l\'historique des commits :', err);
+    }
 }
 
 async function chooseCommitType() {
@@ -17,7 +37,7 @@ async function chooseCommitType() {
                 { name: 'perf: Amélioration des performances', value: 'perf' },
                 { name: 'test: Ajout ou modification de tests', value: 'test' },
                 { name: 'chore: Autres tâches (ex. build)', value: 'chore' },
-                { name: 'remove: Retire un ou plusieurs fichier', value: 'remove'},
+                { name: 'remove: Retire un ou plusieurs fichiers', value: 'remove' },
             ],
             prefix: '',
         }
@@ -27,16 +47,70 @@ async function chooseCommitType() {
 
 async function getCommitMessage(commitType, fileNames) {
     const formattedFiles = formatFileNames(fileNames);
-    const { commitMessage } = await inquirer.prompt([
-        {
-            type: 'input',
-            name: 'commitMessage',
-            message: `Entrez votre message de commit pour le type "${commitType}" :`,
-            validate: (input) => input.trim() ? true : "Le message de commit ne peut pas être vide."
+    const historyFilePath = path.join(process.cwd(), '.history');
+
+    // Charger l'historique existant et inverser l'ordre
+    let commitHistory = [];
+    if (fs.existsSync(historyFilePath)) {
+        commitHistory = fs.readFileSync(historyFilePath, 'utf-8').split('\n').filter(Boolean).reverse();
+    }
+
+    let currentIndex = -1; // Index pour naviguer dans l’historique
+    let commitMessage = ''; // Message par défaut
+
+    while (true) {
+        process.stdout.write(`\r${' '.repeat(process.stdout.columns)}\r`); // Nettoyer la ligne actuelle
+        process.stdout.write(`${chalk.green('✔')} ${chalk.bold(`Entrez votre message de commit pour le type "${commitType}" : ${commitMessage || ''}`)}`);
+        const key = await readKeyPress();
+
+        if (key === 'up' && currentIndex < commitHistory.length - 1) {
+            // Naviguer vers un message plus ancien
+            currentIndex++;
+            commitMessage = commitHistory[currentIndex];
+        } else if (key === 'down' && currentIndex > -1) {
+            // Naviguer vers un message plus récent ou une saisie libre
+            currentIndex--;
+            commitMessage = currentIndex === -1 ? '' : commitHistory[currentIndex];
+        } else if (key === 'enter') {
+            // Valider le message
+            if (!commitMessage.trim()) {
+                continue;
+            }
+            break;
+        } else if (key === 'backspace') {
+            // Supprimer un caractère si l'utilisateur écrit
+            commitMessage = commitMessage.slice(0, -1);
+            currentIndex = -1; // Sortir de l’historique
+        } else if (key.length === 1) {
+            // Ajouter un caractère si l'utilisateur écrit
+            commitMessage += key;
+            currentIndex = -1; // Sortir de l’historique
         }
-    ]);
-    committed = true;
-    return `${commitType}(${formattedFiles}) ${commitMessage}`;
+    }
+
+    // Sauvegarder le message dans l’historique
+    await saveCommitMessage(commitMessage);
+
+    return `${commitType}(${formattedFiles}): ${commitMessage}`;
+}
+
+
+// Fonction utilitaire pour gérer les touches
+function readKeyPress() {
+    return new Promise((resolve) => {
+        process.stdin.setRawMode(true);
+        process.stdin.resume();
+        process.stdin.once('data', (key) => {
+            process.stdin.setRawMode(false);
+            process.stdin.pause();
+            const keyCode = key.toString();
+            if (keyCode === '\u001b[A') resolve('up'); // Flèche haut
+            if (keyCode === '\u001b[B') resolve('down'); // Flèche bas
+            if (keyCode === '\r') resolve('enter'); // Entrée
+            if (keyCode === '\u0008' || keyCode === '\u007f') resolve('backspace'); // Retour arrière
+            resolve(key); // Autres touches
+        });
+    });
 }
 
 module.exports = { getCommitMessage, chooseCommitType, formatFileNames };
