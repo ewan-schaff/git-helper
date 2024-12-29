@@ -5,15 +5,27 @@ function formatFileNames(fileNames) {
     return fileNames.map((file) => file.replace(/[^a-zA-Z0-9.\-_]/g, '')).join('&&');
 }
 
+async function loadCommitHistory() {
+    const historyFilePath = path.join(process.cwd(), '.history');
+    if (fs.existsSync(historyFilePath)) {
+        const history = fs.readFileSync(historyFilePath, 'utf-8')
+            .split('\n')
+            .filter(Boolean)
+        return history;
+    }
+    return [];
+}
+
 async function saveCommitMessage(commitMessage) {
     const historyFilePath = path.join(process.cwd(), '.history');
     try {
-        const existingHistory = fs.existsSync(historyFilePath)
+        let existingHistory = fs.existsSync(historyFilePath)
             ? fs.readFileSync(historyFilePath, 'utf-8').split('\n').filter(Boolean)
             : [];
 
+        // Ajouter le nouveau message au début s'il n'est pas déjà présent
         if (!existingHistory.includes(commitMessage)) {
-            existingHistory.unshift(commitMessage); // Ajouter le plus récent au début
+            existingHistory = [commitMessage, ...existingHistory];
         }
 
         fs.writeFileSync(historyFilePath, existingHistory.join('\n'), 'utf-8');
@@ -21,6 +33,7 @@ async function saveCommitMessage(commitMessage) {
         console.error('Erreur lors de l\'écriture de l\'historique des commits :', err);
     }
 }
+
 
 async function chooseCommitType() {
     const { commitType } = await inquirer.prompt([
@@ -47,13 +60,9 @@ async function chooseCommitType() {
 
 async function getCommitMessage(commitType, fileNames) {
     const formattedFiles = formatFileNames(fileNames);
-    const historyFilePath = path.join(process.cwd(), '.history');
 
-    // Charger l'historique existant et inverser l'ordre
-    let commitHistory = [];
-    if (fs.existsSync(historyFilePath)) {
-        commitHistory = fs.readFileSync(historyFilePath, 'utf-8').split('\n').filter(Boolean).reverse();
-    }
+    // Charger l'historique des commits
+    let commitHistory = await loadCommitHistory();
 
     let currentIndex = -1; // Index pour naviguer dans l’historique
     let commitMessage = ''; // Message par défaut
