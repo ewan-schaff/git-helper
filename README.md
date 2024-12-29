@@ -8,7 +8,7 @@ The **Git Helper Script** is a command-line utility that simplifies the process 
 ## Features
 
 - **Interactive File Selection**: Easily navigate and select modified or untracked files for staging.
-- **Commit Type Options**: Choose from predefined commit types (`Add`, `Fix`, `Remove`, `Fix Merge`) to quickly classify your changes.
+- **Commit Type Options**: Choose from predefined commit types (`feat`, `Fix`, `Chore`, `Remove`) to quickly classify your changes.
 - **Custom Commit Messages**: Add descriptive commit messages to better explain the changes.
 - **Push Confirmation**: After committing, you can confirm whether or not to push the changes to the remote repository.
 - **Cancel Actions**: Press `q` at any time to unstage files and exit, canceling the current operation.
@@ -42,7 +42,8 @@ To run the Git Helper Script, use the following command:
 
 ### Available Commands
 - `-h`, `--help`: Show the help menu and exit.
-- `-v`, `--version`: Display the current version of the script.
+- `-s`, `--stats`: Display statistics about the repository (e.g., number of commits, branches, etc.).
+- `-r`, `--remove`: Interactively select and remove files from Git tracking using `git rm`
 
 ### Interactive Controls
 - **[↑] / [↓]**: Navigate through the list of files.
@@ -53,29 +54,38 @@ To run the Git Helper Script, use the following command:
 - **[q]**: Cancel the current operation, unstage all selected files, and exit.
 - **[Ctrl+C]**: Exit the script immediately.
 
-## Example Workflow
-1. **Launch the Script**: 
-   ```bash
-   ./git-helper
-   ```
-2. **Select Files**: Use the arrow keys and space bar to select the files you want to add.
-3. **Choose Commit Type**: Pick a commit type (e.g., `Add`, `Fix`, `Remove`).
-4. **Enter Commit Message**: Write a commit message describing your changes.
-5. **Confirm Push**: Decide whether to push the commit to the remote repository or not.
-6. **Exit or Cancel**: Press `q` at any time to cancel the process and unstage files.
-
 ## Example
 ```bash
 ./git-helper
 ```
 1. The script displays the current Git status and lets you select files.
 2. After selecting files, choose a commit type from:
-   - `[+] Add`
-   - `[|] Fix`
-   - `[-] Remove`
-   - `[|] Fix Merge`
+   - `feat:`
+   - `fix:`
+   - `docs:`
+   - `style:`
+   - `refactor:`
+   - `perf:`
+   - `test:`
+   - `chore:`
+   - `remove:`
+
 3. Enter a commit message to finalize your commit.
 4. Confirm whether to push the commit to the remote repository.
+
+## Removing Files
+1. Run the script with the `--remove` option:
+```bash
+./git-helper -r
+```
+2. Select the files you want to remove using `git rm`.
+3. Confirm the selection, and the script will handle the removal process.
+
+## Viewing Repository Statistics
+Run the script with the `--stats` option to display repository information:
+```bash
+./git-helper -s
+```
 
 ## Error Handling
 If an error occurs during the script's operation (e.g., invalid Git commands), the script will attempt to clean up by unstaging files and then exit. Make sure that Git is properly installed and configured on your system to avoid issues.
