@@ -60,17 +60,17 @@ To run the Git Helper Script, use the following command:
 ```
 1. The script displays the current Git status and lets you select files.
 2. After selecting files, choose a commit type from:
-   - `feat:`
-   - `fix:`
-   - `docs:`
-   - `style:`
-   - `refactor:`
-   - `perf:`
-   - `test:`
-   - `chore:`
-   - `remove:`
+   - `feat()`: Adds a new feature
+   - `fix()`: Fixes a bug.
+   - `docs()`: Updates documentation.
+   - `style()`: Changes that do not affect functionality (e.g., code formatting).
+   - `refactor()`: Refactors code without changing functionality.
+   - `perf()`: Improves performance.
+   - `test()`: Adds or modifies tests.
+   - `chore()`: Updates build tasks, dependencies, or tools.
+   - `remove()` Removes files from the repository.
 
-3. Enter a commit message to finalize your commit.
+3. Enter a commit message to finalize your commit. The names of the files included in the commit will be    displayed alongside the chosen prefix (e.g., `feat(file1.js&&file2.js)`).
 4. Confirm whether to push the commit to the remote repository.
 
 ## Removing Files
