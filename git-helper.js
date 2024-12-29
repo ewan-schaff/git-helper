@@ -13,6 +13,7 @@ const git = simpleGit();
 let addedFiles = false;
 let committed = false;
 let selectedFiles = [];
+let gitrm = false;
 
 async function loadDependencies() {
     chalk = (await import('chalk')).default;
@@ -35,7 +36,16 @@ async function getGitFiles() {
         ...status.deleted.map(file => ({ name: ` ${chalk.blue('🗑️')} ${file}`, value: file })) // Ajoute les fichiers supprimés
     ];
 }
+async function getRmFiles() {
+    const trackedFiles = await git.raw(['ls-files']); // Liste des fichiers suivis
+    const files = trackedFiles.trim().split('\n'); // Divise la liste en un tableau de fichiers
 
+    // Génère la liste avec des indicateurs visuels
+    return files.map(file => ({
+        name: ` ${chalk.green('🟢')} ${file}`, // Icône verte pour fichiers suivis
+        value: file
+    }));
+}
 async function cleanIndex() {
     try {
         await git.reset(['HEAD']);
@@ -59,26 +69,27 @@ async function handleExit() {
     if (addedFiles && selectedFiles.length > 0) {
         await cleanIndex(); // Nettoyer les fichiers ajoutés
     }
-    console.log(`${chalk.bold("Programme quitté avec succès.")}`);
+    console.log(`\n${chalk.bold("Programme quitté avec succès.")}`);
     process.exit(0);
 }
 
 async function main() {
     await loadDependencies();
 
-    // Vérifier les arguments passés
     const args = process.argv.slice(2);
 
-    // Vérifier si l'option -h ou --help est utilisée
     if (args.includes('-h') || args.includes('--help')) {
         await showHelp();
         return;
     }
 
-    // Vérifier si l'option -s ou --stats est utilisée
     if (args.includes('-s') || args.includes('--stats')) {
         await showStats();
         return;
+    }
+
+    if (args.includes('-r') || args.includes('--remove')) {
+        gitrm = true;
     }
 
     process.stdin.setRawMode(true);
@@ -91,14 +102,18 @@ async function main() {
 
     try {
         await displayGitStatus();
-        const files = await getGitFiles();
+        let files;
+        if (gitrm)
+            files = await getRmFiles();
+        else
+            files = await getGitFiles();
 
         if (files.length === 0) {
             console.log(`${chalk.yellow("Aucun fichier modifié ou non suivi trouvé.")}`);
             process.exit(0);
         }
 
-        selectedFiles = await selectFilesToAdd(files);
+        selectedFiles = await selectFilesToAdd(files, gitrm);
         addedFiles = selectedFiles.length > 0;
 
         if (!addedFiles) {
@@ -106,7 +121,10 @@ async function main() {
             process.exit(0);
         }
 
-        await git.add(selectedFiles);
+        if (gitrm)
+            await git.rm(selectedFiles);
+        else
+            await git.add(selectedFiles);
 
         const commitType = await chooseCommitType();
         const commitMessage = await getCommitMessage(commitType, selectedFiles);

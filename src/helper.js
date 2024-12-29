@@ -12,8 +12,9 @@ async function showHelp() {
             ./git-helper [options]
 
         ${chalk.bold("Options :")}
-            -h, --help        Afficher ce message d'aide et quitter
-            -v, --version     Afficher la version du script
+            -h, --help        Affiche ce message d'aide et quitter
+            -s, --stats        Affiche certaine stat sur le répo
+            -r, --remove      Met en place une logique pour faire un 'git rm'
 
         ${chalk.bold("Fonctionnalités :")}
             Ce script vous permet de sélectionner des nouveaux fichiers ou des fichiers modifiés et de les ajouter à un commit Git de manière interactive.

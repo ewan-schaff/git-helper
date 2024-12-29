@@ -17,6 +17,7 @@ async function chooseCommitType() {
                 { name: 'perf: Amélioration des performances', value: 'perf' },
                 { name: 'test: Ajout ou modification de tests', value: 'test' },
                 { name: 'chore: Autres tâches (ex. build)', value: 'chore' },
+                { name: 'remove: Retire un ou plusieurs fichier', value: 'remove'},
             ],
             prefix: '',
         }
