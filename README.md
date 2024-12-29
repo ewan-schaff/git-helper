@@ -79,7 +79,8 @@ To run the Git Helper Script, use the following command:
 ./git-helper -r
 ```
 2. Select the files you want to remove using `git rm`.
-3. Confirm the selection, and the script will handle the removal process.
+3. Enter a commit message to finalize your commit.
+4. Confirm the selection, and the script will handle the removal process.
 
 ## Viewing Repository Statistics
 Run the script with the `--stats` option to display repository information:
