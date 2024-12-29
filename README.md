@@ -71,7 +71,8 @@ To run the Git Helper Script, use the following command:
    - `remove()` Removes files from the repository.
 
 3. Enter a commit message to finalize your commit. The names of the files included in the commit will be    displayed alongside the chosen prefix (e.g., `feat(file1&&file2)`).
-4. Confirm whether to push the commit to the remote repository.
+4. Navigate commit message history with [↑]/[↓] during message entry.
+5. Confirm whether to push the commit to the remote repository.
 
 ## Removing Files
 1. Run the script with the `--remove` option:
