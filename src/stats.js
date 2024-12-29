@@ -18,7 +18,7 @@ async function showStats() {
         const pushedCommits = await git.raw(['log', '--oneline', 'origin/main']);
         const pushedCount = pushedCommits.split('\n').filter(commit => commit).length;
 
-        console.log(`\n--- ${chalk.bold("Statistiques du dépôt")} ---\n`);
+        console.log(`\n--- ${chalk.bold("Statistiques du répo")} ---\n`);
         console.log(`Nombre de commits : ${chalk.green(pushedCount)}`);
         console.log(`Date du dernier commit : ${chalk.green(lastPushedDate)}`);
         console.log(`Nombre de branches : ${chalk.green(branchCount)}`);

@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 const simpleGit = require('simple-git');
+
 let inquirer;
 let chalk;
+const { showHelp } = require('./src/helper.js');
+const { showStats } = require('./src/stats.js')
 const { selectFilesToAdd } = require('./src/add.js');
 const { chooseCommitType, getCommitMessage } = require('./src/commit.js');
 const { confirmPush } = require('./src/push.js');
@@ -36,7 +39,6 @@ async function getGitFiles() {
 async function cleanIndex() {
     try {
         await git.reset(['HEAD']);
-        console.log(`\n--- ${chalk.bold("Nettoyage des fichiers ajoutés...")} ---`);
     } catch (error) {
         console.error("Erreur pendant la tentative de nettoyage :", error);
     }
@@ -45,7 +47,6 @@ async function cleanIndex() {
 async function undoLastCommit() {
     try {
         await git.reset(['--soft', 'HEAD~1']); // Garder les modifications dans l'index
-        console.log(`\n--- ${chalk.greenBright("Dernier commit annulé avec succès")} ---`);
     } catch (error) {
         console.error("Erreur pendant l'annulation du dernier commit :", error);
     }
@@ -64,6 +65,21 @@ async function handleExit() {
 
 async function main() {
     await loadDependencies();
+
+    // Vérifier les arguments passés
+    const args = process.argv.slice(2);
+
+    // Vérifier si l'option -h ou --help est utilisée
+    if (args.includes('-h') || args.includes('--help')) {
+        await showHelp();
+        return;
+    }
+
+    // Vérifier si l'option -s ou --stats est utilisée
+    if (args.includes('-s') || args.includes('--stats')) {
+        await showStats();
+        return;
+    }
 
     process.stdin.setRawMode(true);
     process.stdin.resume();
