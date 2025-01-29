@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 const simpleGit = require('simple-git');
+const fs = require('fs');
+const path = require('path');
 
 let inquirer;
 let chalk;
 const { showHelp } = require('./src/helper.js');
-const { showStats } = require('./src/stats.js')
+const { showStats } = require('./src/stats.js');
 const { selectFilesToAdd } = require('./src/add.js');
 const { chooseCommitType, getCommitMessage } = require('./src/commit.js');
 const { confirmPush } = require('./src/push.js');
@@ -15,17 +17,43 @@ let committed = false;
 let selectedFiles = [];
 let gitrm = false;
 
+const gitignoreContent = `
+main.c
+main.cpp
+vgcore*
+*.log
+*.o
+a.out
+.history
+`.trim();
+
 async function loadDependencies() {
     chalk = (await import('chalk')).default;
     inquirer = (await import('inquirer')).default;
 }
 
+async function createGitignore() {
+    const gitignorePath = path.join(process.cwd(), '.gitignore');
+
+    if (!fs.existsSync(gitignorePath)) {
+        fs.writeFileSync(gitignorePath, gitignoreContent, 'utf8');
+        console.log(`${chalk.greenBright("Fichier .gitignore créé avec succès.")}`);
+    } else {
+        console.log(`${chalk.yellow(".gitignore existe déjà. Aucune modification effectuée.")}`);
+    }
+}
+
 async function displayGitStatus() {
     const currentDirectory = process.cwd();
-    const status = await git.status();
-    const currentBranch = status.current;
-    const statusMessage = `--- ${chalk.green('➜')} ${chalk.cyanBright(currentDirectory)} ${chalk.blue('git:(')}${chalk.red(currentBranch)}${chalk.blue(')')} ---`;
-    console.log(`\n${chalk.bold(statusMessage)}\n`);
+    try {
+        const status = await git.status();
+        const currentBranch = status.current;
+        const statusMessage = `--- ${chalk.green('➜')} ${chalk.cyanBright(currentDirectory)} ${chalk.blue('git:(')}${chalk.red(currentBranch)}${chalk.blue(')')} ---`;
+        console.log(`\n${chalk.bold(statusMessage)}\n`);
+    } catch (error) {
+        console.error(chalk.redBright("Erreur : Ce répertoire n'est pas un répo Git !"));
+        process.exit(1);
+    }
 }
 
 async function getGitFiles() {
@@ -33,19 +61,20 @@ async function getGitFiles() {
     return [
         ...status.modified.map(file => ({ name: ` ${chalk.yellow('🟡')} ${file}`, value: file })),
         ...status.not_added.map(file => ({ name: ` ${chalk.red('🔴')} ${file}`, value: file })),
-        ...status.deleted.map(file => ({ name: ` ${chalk.blue('🗑️')} ${file}`, value: file })) // Ajoute les fichiers supprimés
+        ...status.deleted.map(file => ({ name: ` ${chalk.blue('🗑️')} ${file}`, value: file })),
     ];
 }
-async function getRmFiles() {
-    const trackedFiles = await git.raw(['ls-files']); // Liste des fichiers suivis
-    const files = trackedFiles.trim().split('\n'); // Divise la liste en un tableau de fichiers
 
-    // Génère la liste avec des indicateurs visuels
+async function getRmFiles() {
+    const trackedFiles = await git.raw(['ls-files']);
+    const files = trackedFiles.trim().split('\n');
+
     return files.map(file => ({
-        name: ` ${chalk.green('🟢')} ${file}`, // Icône verte pour fichiers suivis
-        value: file
+        name: ` ${chalk.green('🟢')} ${file}`,
+        value: file,
     }));
 }
+
 async function cleanIndex() {
     try {
         await git.reset(['HEAD']);
@@ -56,7 +85,7 @@ async function cleanIndex() {
 
 async function undoLastCommit() {
     try {
-        await git.reset(['--soft', 'HEAD~1']); // Garder les modifications dans l'index
+        await git.reset(['--soft', 'HEAD~1']);
     } catch (error) {
         console.error("Erreur pendant l'annulation du dernier commit :", error);
     }
@@ -64,10 +93,10 @@ async function undoLastCommit() {
 
 async function handleExit() {
     if (committed) {
-        await undoLastCommit(); // Annuler le dernier commit
+        await undoLastCommit();
     }
     if (addedFiles && selectedFiles.length > 0) {
-        await cleanIndex(); // Nettoyer les fichiers ajoutés
+        await cleanIndex();
     }
     console.log(`\n${chalk.bold("Programme quitté avec succès.")}`);
     process.exit(0);
@@ -82,7 +111,6 @@ async function main() {
         await showHelp();
         return;
     }
-
     if (args.includes('-s') || args.includes('--stats')) {
         await showStats();
         return;
@@ -91,7 +119,6 @@ async function main() {
     if (args.includes('-r') || args.includes('--remove')) {
         gitrm = true;
     }
-
     process.stdin.setRawMode(true);
     process.stdin.resume();
     process.stdin.on('data', async (key) => {
@@ -102,11 +129,14 @@ async function main() {
 
     try {
         await displayGitStatus();
+        await createGitignore();
+
         let files;
-        if (gitrm)
+        if (gitrm) {
             files = await getRmFiles();
-        else
+        } else {
             files = await getGitFiles();
+        }
 
         if (files.length === 0) {
             console.log(`${chalk.yellow("Aucun fichier modifié ou non suivi trouvé.")}`);
@@ -121,10 +151,11 @@ async function main() {
             process.exit(0);
         }
 
-        if (gitrm)
+        if (gitrm) {
             await git.rm(selectedFiles);
-        else
+        } else {
             await git.add(selectedFiles);
+        }
 
         const commitType = await chooseCommitType();
         const commitMessage = await getCommitMessage(commitType, selectedFiles);

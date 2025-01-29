@@ -23,7 +23,6 @@ async function saveCommitMessage(commitMessage) {
             ? fs.readFileSync(historyFilePath, 'utf-8').split('\n').filter(Boolean)
             : [];
 
-        // Ajouter le nouveau message au début s'il n'est pas déjà présent
         if (!existingHistory.includes(commitMessage)) {
             existingHistory = [commitMessage, ...existingHistory];
         }
@@ -51,6 +50,8 @@ async function chooseCommitType() {
                 { name: 'test: Ajout ou modification de tests', value: 'test' },
                 { name: 'chore: Autres tâches (ex. build)', value: 'chore' },
                 { name: 'remove: Retire un ou plusieurs fichiers', value: 'remove' },
+                { name: 'codding-style: Changement d\'erreur codding style', value: "codding-style"},
+                { name: 'merge: Corrige un merge', value: "merge"},
             ],
             prefix: '',
         }
@@ -61,50 +62,42 @@ async function chooseCommitType() {
 async function getCommitMessage(commitType, fileNames) {
     const formattedFiles = formatFileNames(fileNames);
 
-    // Charger l'historique des commits
     let commitHistory = await loadCommitHistory();
 
-    let currentIndex = -1; // Index pour naviguer dans l’historique
-    let commitMessage = ''; // Message par défaut
+    let currentIndex = -1;
+    let commitMessage = '';
 
     while (true) {
-        process.stdout.write(`\r${' '.repeat(process.stdout.columns)}\r`); // Nettoyer la ligne actuelle
+        process.stdout.write(`\r${' '.repeat(process.stdout.columns)}\r`);
         process.stdout.write(`${chalk.green('✔')} ${chalk.bold(`Entrez votre message de commit pour le type "${commitType}" : ${commitMessage || ''}`)}`);
         const key = await readKeyPress();
 
         if (key === 'up' && currentIndex < commitHistory.length - 1) {
-            // Naviguer vers un message plus ancien
             currentIndex++;
             commitMessage = commitHistory[currentIndex];
         } else if (key === 'down' && currentIndex > -1) {
-            // Naviguer vers un message plus récent ou une saisie libre
             currentIndex--;
             commitMessage = currentIndex === -1 ? '' : commitHistory[currentIndex];
         } else if (key === 'enter') {
-            // Valider le message
             if (!commitMessage.trim()) {
                 continue;
             }
             break;
         } else if (key === 'backspace') {
-            // Supprimer un caractère si l'utilisateur écrit
             commitMessage = commitMessage.slice(0, -1);
-            currentIndex = -1; // Sortir de l’historique
+            currentIndex = -1;
         } else if (key.length === 1) {
-            // Ajouter un caractère si l'utilisateur écrit
             commitMessage += key;
-            currentIndex = -1; // Sortir de l’historique
+            currentIndex = -1;
         }
     }
 
-    // Sauvegarder le message dans l’historique
     await saveCommitMessage(commitMessage);
 
     return `${commitType}(${formattedFiles}): ${commitMessage}`;
 }
 
 
-// Fonction utilitaire pour gérer les touches
 function readKeyPress() {
     return new Promise((resolve) => {
         process.stdin.setRawMode(true);
@@ -113,11 +106,11 @@ function readKeyPress() {
             process.stdin.setRawMode(false);
             process.stdin.pause();
             const keyCode = key.toString();
-            if (keyCode === '\u001b[A') resolve('up'); // Flèche haut
-            if (keyCode === '\u001b[B') resolve('down'); // Flèche bas
-            if (keyCode === '\r') resolve('enter'); // Entrée
-            if (keyCode === '\u0008' || keyCode === '\u007f') resolve('backspace'); // Retour arrière
-            resolve(key); // Autres touches
+            if (keyCode === '\u001b[A') resolve('up');
+            if (keyCode === '\u001b[B') resolve('down');
+            if (keyCode === '\r') resolve('enter');
+            if (keyCode === '\u0008' || keyCode === '\u007f') resolve('backspace');
+            resolve(key);
         });
     });
 }

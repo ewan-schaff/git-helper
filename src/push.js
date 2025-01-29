@@ -3,7 +3,7 @@ async function confirmPush() {
         {
             type: 'confirm',
             name: 'shouldPush',
-            message: 'Le commit a été effectué avec succès. Voulez-vous le pousser ?',
+            message: 'Le commit a été effectué avec succès. Voulez-vous le push ?',
             default: true,
         }
     ]);
