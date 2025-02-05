@@ -38,8 +38,6 @@ async function createGitignore() {
     if (!fs.existsSync(gitignorePath)) {
         fs.writeFileSync(gitignorePath, gitignoreContent, 'utf8');
         console.log(`${chalk.greenBright("Fichier .gitignore créé avec succès.")}`);
-    } else {
-        console.log(`${chalk.yellow(".gitignore existe déjà. Aucune modification effectuée.")}`);
     }
 }
 
@@ -121,10 +119,10 @@ async function main() {
     }
     process.stdin.setRawMode(true);
     process.stdin.resume();
+    process.stdin.setEncoding('utf8');
     process.stdin.on('data', async (key) => {
-        if (key.toString() === 'q') {
+        if (key === '\x11' || key == '\u0003')
             await handleExit();
-        }
     });
 
     try {
